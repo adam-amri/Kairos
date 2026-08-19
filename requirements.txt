@@ -1,0 +1,12 @@
+# Coeur — necessaire des la Phase 1
+pandas>=2.0
+pyarrow>=14.0
+numpy>=1.24
+PyYAML>=6.0
+
+# Connecteur IBKR. ib_insync n'est plus maintenu : ib_async en est la continuation communautaire.
+ib_async>=1.0
+
+# Analyse (Phase 1-2)
+duckdb>=0.10
+matplotlib>=3.7

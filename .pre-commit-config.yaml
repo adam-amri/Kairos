@@ -1,0 +1,26 @@
+# pip install pre-commit && pre-commit install
+#
+# La protection la plus utile du depot. Une cle API poussee sur GitHub est
+# moissonnee par des robots en quelques minutes : ce hook l'arrete avant le commit,
+# ce qui est le seul moment ou l'arreter coute encore zero.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1000"]        # bloque un parquet de ticks pousse par erreur
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: [--fix]

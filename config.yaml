@@ -1,0 +1,34 @@
+# Configuration Kairos — Phase 1 (collecte et mesure)
+
+venue: ibkr            # ibkr | synthetic
+
+ibkr:
+  host: 127.0.0.1
+  port: 4002           # 4002 = IB Gateway paper · 4001 = live · 7497 = TWS paper
+  client_id: 17
+  # Le triangle. L'ordre importe : base/quote tel que cote par le venue.
+  pairs:
+    - [EUR, USD]
+    - [USD, JPY]
+    - [EUR, JPY]
+
+synthetic:
+  duration_s: 60
+  ticks_per_s: 20
+  # Amplitude du bruit injecte hors relation de non-arbitrage, en bps.
+  # Sert a verifier que l'analyseur retrouve bien ce qu'on y a mis.
+  noise_bps: 0.8
+  spread_bps: 0.28
+
+store:
+  path: ./data
+  # Nombre de ticks bufferises avant ecriture disque. Compromis perte/latence.
+  flush_every: 5000
+
+# Repris de l'onglet Hypotheses du modele de couts. Doit rester synchronise.
+costs:
+  commission_bps: 0.20
+  commission_floor_usd: 2.00
+  notional_usd: 10000
+  spread_bps: 0.28
+  legs: 3

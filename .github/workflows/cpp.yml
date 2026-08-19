@@ -1,0 +1,36 @@
+name: CI C++
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compiler et tester
+        working-directory: kairos-cpp
+        run: make test
+
+      # -ffast-math reordonne les operations flottantes et suppose l'absence de
+      # NaN. Le determinisme du moteur en depend — et c'est lui qui rend possible
+      # le test de non-regression backtest/live. Sa presence est donc une erreur
+      # de build, pas une preference de style.
+      - name: Verifier l'absence de -ffast-math
+        working-directory: kairos-cpp
+        run: |
+          if grep -rn -- "-ffast-math" Makefile CMakeLists.txt 2>/dev/null; then
+            echo "::error::-ffast-math est proscrit : il casse le determinisme"
+            exit 1
+          fi
+          echo "OK — aucun -ffast-math"
+
+      - name: Validation croisee C++ / Python
+        working-directory: kairos-cpp
+        run: make xval

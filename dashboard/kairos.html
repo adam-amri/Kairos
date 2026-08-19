@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KAIROS</title>
+<style>
+  :root{
+    --fond:#000000; --panneau:#0b0b0d; --trait:#1e1e24; --trait-faible:#141419;
+    --blanc:#ffffff; --gris:#8a8a94; --gris-faible:#5a5a63;
+    --ambre:#ffa726; --hausse:#26d07c; --baisse:#ff5252;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;padding:0;background:var(--fond);color:var(--blanc);overflow:hidden;
+    font:12px/1.4 ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    -webkit-font-smoothing:antialiased;
+  }
+  .barre{
+    display:flex;align-items:center;gap:22px;padding:0 16px;height:38px;
+    border-bottom:1px solid var(--trait);background:var(--panneau);
+    overflow-x:auto;overflow-y:hidden;
+  }
+  .marque{color:var(--ambre);font-weight:700;letter-spacing:.16em;font-size:12px;white-space:nowrap}
+  .onglets{display:flex;align-self:stretch}
+  .onglets button{
+    background:transparent;border:none;border-bottom:2px solid transparent;
+    color:var(--gris-faible);font:inherit;font-size:11px;letter-spacing:.1em;
+    padding:0 16px;cursor:pointer;height:100%;white-space:nowrap;
+  }
+  .onglets button:hover{color:var(--gris)}
+  .onglets button.actif{color:var(--ambre);border-bottom-color:var(--ambre)}
+  .champ{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
+  .k{color:var(--gris);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+  .v{font-size:13px;font-variant-numeric:tabular-nums}
+  .pnl{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+  .hausse{color:var(--hausse)} .baisse{color:var(--baisse)}
+  .fin{margin-left:auto;display:flex;align-items:center;gap:14px;white-space:nowrap}
+  .etat{display:flex;align-items:center;gap:6px;color:var(--gris);font-size:11px}
+  .pastille{width:6px;height:6px;border-radius:50%;background:var(--gris-faible)}
+  .pastille.on{background:var(--hausse)} .pastille.ko{background:var(--baisse)}
+  .cache{display:none !important}
+  .btn{background:transparent;border:1px solid var(--trait);color:var(--gris);
+       font:inherit;font-size:10px;padding:4px 11px;cursor:pointer;letter-spacing:.08em}
+  .btn:hover{color:var(--blanc);border-color:var(--gris)}
+  .btn.stop{color:var(--baisse);border-color:#3a1e1e}
+  .boutons{display:flex;gap:2px}
+  .boutons button{background:transparent;border:1px solid var(--trait);color:var(--gris);
+    font:inherit;font-size:10px;padding:3px 9px;cursor:pointer;letter-spacing:.06em}
+  .boutons button.actif{color:var(--fond);background:var(--ambre);border-color:var(--ambre)}
+
+  .vue{height:calc(100vh - 38px);overflow:auto}
+  table{width:100%;min-width:2080px;border-collapse:collapse;font-size:12px}
+  thead th{position:sticky;top:0;z-index:5;background:var(--panneau);color:var(--ambre);
+    font-weight:600;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+    text-align:left;white-space:nowrap;padding:7px 12px;border-bottom:1px solid var(--trait)}
+  th.d,td.d{text-align:right}
+  tbody td{padding:6px 12px;border-bottom:1px solid #101014;white-space:nowrap;
+           font-variant-numeric:tabular-nums}
+  tbody tr:hover td{background:#131318}
+  td.gris{color:var(--gris)} td.faible{color:var(--gris-faible)} td.fort{font-weight:700}
+  .parcours{white-space:normal;min-width:300px;max-width:640px;line-height:1.7}
+  .fl{color:var(--gris-faible);margin:0 3px}
+  .badge{display:inline-block;padding:0 6px;border:1px solid var(--trait);
+         border-radius:3px;color:var(--gris);font-size:10px}
+  .vide{color:var(--gris-faible);padding:70px 16px;text-align:center}
+
+  /* ---- ecran de depart ---- */
+  .depart{height:calc(100vh - 38px);display:flex;flex-direction:column;
+          align-items:center;justify-content:center;gap:16px;padding:24px}
+  .depart h1{font-size:14px;font-weight:600;letter-spacing:.24em;color:var(--ambre);margin:0}
+  .src{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--gris)}
+  .src input{background:#0f0f13;border:1px solid var(--trait);color:var(--blanc);
+             font:inherit;font-size:11px;padding:6px 10px;width:400px}
+  .diag{width:100%;max-width:580px;border:1px solid var(--trait)}
+  .diag .l{display:flex;align-items:center;gap:12px;padding:7px 14px;
+           border-bottom:1px solid var(--trait-faible);font-size:12px}
+  .diag .l:last-child{border-bottom:none}
+  .diag .n{color:var(--gris);flex:none;width:200px;font-size:10px;
+           letter-spacing:.06em;text-transform:uppercase}
+  .diag .val{flex:1;font-variant-numeric:tabular-nums;
+             overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .diag .ind{flex:none;width:16px;text-align:right;font-size:13px}
+  .ok{color:var(--hausse)} .ko{color:var(--baisse)} .na{color:var(--gris-faible)}
+  .lancer{background:var(--ambre);color:var(--fond);border:none;font:inherit;
+          font-size:13px;font-weight:700;letter-spacing:.14em;padding:13px 34px;cursor:pointer}
+  .lancer:hover{filter:brightness(1.12)}
+  .lancer:disabled{background:#26262c;color:var(--gris-faible);cursor:not-allowed}
+  .msg{color:var(--baisse);font-size:11px;max-width:580px;line-height:1.75;text-align:left}
+  .msg b{color:var(--blanc)} .msg code{color:var(--ambre)}
+
+  .grille{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--trait-faible)}
+  @media(max-width:1400px){.grille{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:1040px){.grille{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:680px){.grille{grid-template-columns:1fr}}
+  .cellule{background:var(--fond);padding:12px 14px 8px;min-width:0}
+  .tete{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .sym{font-size:13px;font-weight:700;letter-spacing:.05em}
+  .var{font-size:12px;font-variant-numeric:tabular-nums}
+  .prix{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;line-height:1.2}
+  .detail{display:flex;gap:12px;color:var(--gris-faible);font-size:10px;margin-top:2px;
+          font-variant-numeric:tabular-nums;flex-wrap:wrap}
+  svg{display:block;width:100%;height:72px;margin-top:6px}
+  .courbe{fill:none;stroke:var(--blanc);stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round}
+  .base{stroke:var(--trait);stroke-width:1;stroke-dasharray:2 3}
+  .svide{fill:var(--gris-faible);font-size:10px}
+  .attente{color:var(--gris-faible);padding:90px 0;text-align:center;grid-column:1/-1}
+</style>
+</head>
+<body>
+
+<div class="barre">
+  <span class="marque">KAIROS</span>
+  <span class="onglets" id="onglets">
+    <button data-v="arb" class="actif">ARBITRAGE</button>
+    <button data-v="cours">COURS</button>
+  </span>
+  <span class="champ ch-arb"><span class="k">P&amp;L</span><span class="pnl" id="pnl">—</span></span>
+  <span class="champ ch-arb"><span class="k">Rendement</span><span class="v" id="rdt">—</span></span>
+  <span class="champ ch-arb"><span class="k">Retenues</span><span class="v" id="taux">—</span></span>
+  <span class="champ ch-arb"><span class="k">Ordres</span><span class="v" id="nb">0</span></span>
+  <span class="champ ch-arb"><span class="k">Boucles</span><span class="v" id="vus">0</span></span>
+  <span class="champ ch-arb"><span class="k">Frais</span><span class="v" id="frais">—</span></span>
+  <span class="champ ch-cours cache"><span class="k">Paires</span><span class="v" id="n_paires">0</span></span>
+  <span class="champ ch-cours cache"><span class="k">Fenêtre</span><span class="boutons" id="fenetres"></span></span>
+  <span class="fin">
+    <button class="btn ch-arb" id="csv">EXPORTER CSV</button>
+    <button class="btn stop cache" id="arret">ARRÊTER</button>
+    <span class="champ"><span class="k">Fraîcheur</span><span class="v" id="fr">—</span></span>
+    <span class="etat"><span class="pastille" id="pastille"></span><span id="etat">arrêté</span></span>
+  </span>
+</div>
+
+<div class="depart" id="depart">
+  <h1>KAIROS</h1>
+  <div class="src">SOURCE
+    <input id="url" value="kairos-live.json">
+    <button class="btn" id="tester">TESTER</button>
+  </div>
+  <div class="diag" id="diag"></div>
+  <button class="lancer" id="lancer" disabled>LANCER L'ALGORITHME</button>
+  <div class="msg cache" id="msg"></div>
+</div>
+
+<div class="vue cache" id="v-arb">
+  <table>
+    <thead><tr>
+      <th>Heure</th><th>ID</th><th>Parcours des devises</th><th class="d">Jbs</th>
+      <th>Départ</th><th class="d">Notionnel</th><th class="d">Produit des taux</th>
+      <th class="d">Brut bps</th><th class="d">Spread bps</th><th class="d">Comm. bps</th>
+      <th class="d">Comm. €</th><th class="d">Coût bps</th><th class="d">Coût €</th>
+      <th class="d">Net bps</th><th class="d">Gain €</th><th class="d">Cumul €</th>
+      <th class="d">Fraîch.</th><th class="d">Latence</th><th>Statut</th><th>Source</th>
+    </tr></thead>
+    <tbody id="lignes"></tbody>
+  </table>
+</div>
+
+<div class="vue cache" id="v-cours">
+  <div class="grille" id="grille"><div class="attente">EN ATTENTE DES COTATIONS</div></div>
+</div>
+
+<script>
+"use strict";
+
+let vue = "arb", timer = null, sonde = null, enMarche = false, pret = false;
+
+const A = { ordres:[], total:0, frais:0, vus:0, capital:1000 };
+const PAIRES = ["EUR/USD","USD/JPY","GBP/USD","USD/CHF","AUD/USD","USD/CAD","NZD/USD","EUR/GBP",
+                "EUR/JPY","GBP/JPY","EUR/CHF","AUD/JPY","CHF/JPY","EUR/AUD","CAD/JPY","NZD/JPY"];
+const FENETRES = [{lab:"5M",pts:150},{lab:"15M",pts:450},{lab:"1H",pts:1800}];
+let fenetre = 0;
+const MAX_POINTS = 1800;
+const hist = new Map();
+
+const f2  = n => n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const f0  = n => n.toLocaleString("fr-FR",{maximumFractionDigits:0});
+const sg  = n => (n>=0?"+":"−") + Math.abs(n).toFixed(2);
+const sg2 = n => (n>=0?"+":"−") + f2(Math.abs(n));
+const nbd = (v,d) => v.toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const dec = s => s.endsWith("/JPY") ? 3 : 5;
+const hms = t => { const d=new Date(t);
+  return d.toLocaleTimeString("fr-FR",{hour12:false})+"."+String(d.getMilliseconds()).padStart(3,"0"); };
+
+/* ==================== ECRAN DE DEPART ==================== */
+/* Une liste d'etats, un indicateur par ligne. Le diagnostic remplace
+   l'explication : on voit quel maillon manque, pas un message generique. */
+
+const LIGNES = [
+  {n:"Pont de données",    f:d => d ? ["actif", true] : ["injoignable", false]},
+  {n:"Source",             f:(d,u) => [u, !!d]},
+  {n:"Connexion IBKR",     f:d => {
+      const c = d?.connexion; if (!c) return ["—", null];
+      if (c.mode === "DEMO") return ["démonstration", null];
+      return [`${c.hote}:${c.port}`, !!c.connecte];
+  }},
+  {n:"Identifiant client", f:d => {
+      const c = d?.connexion; if (!c || c.mode === "DEMO") return ["—", null];
+      return [String(c.client_id), c.client_id > 0];
+  }},
+  {n:"Compte",             f:d => {
+      const c = d?.connexion; if (!c) return ["—", null];
+      return [c.compte || "inconnu", c.mode === "DEMO" ? null : !!c.compte];
+  }},
+  {n:"Mode",               f:d => {
+      const m = d?.connexion?.mode; if (!m) return ["—", null];
+      return [m, m === "SIMULATION" ? true : (m === "REEL" ? false : null)];
+  }},
+  {n:"Lecture seule",      f:d => d ? [d.lecture_seule ? "oui" : "NON", !!d.lecture_seule] : ["—", null]},
+  {n:"Paires reçues",      f:d => d ? [`${d.n_paires} / 8`, d.n_paires >= 8] : ["—", null]},
+  {n:"Fraîcheur",          f:d => d ? [`${d.fraicheur_ms} ms`, d.fraicheur_ms < 3000] : ["—", null]},
+  {n:"Latence médiane",    f:d => {
+      const l = d?.latence_p50_us; if (!l) return ["—", null];
+      return [`${Math.round(l)} µs`, l > 0 && l < 3e6];
+  }},
+  {n:"Boucles surveillées",f:d => d ? [String(d.boucles_examinees), d.boucles_examinees > 0] : ["—", null]},
+  {n:"Notionnel",          f:d => d ? [f0(d.notionnel) + " $", true] : ["—", null]},
+];
+
+function peindreDiag(d, url){
+  const z = document.getElementById("diag");
+  z.innerHTML = LIGNES.map(L => {
+    const [val, ok] = L.f(d, url);
+    const ind = ok === true ? '<span class="ok">✓</span>'
+              : ok === false ? '<span class="ko">✗</span>'
+              : '<span class="na">·</span>';
+    const cl = ok === false ? "ko" : (ok === true ? "" : "na");
+    return `<div class="l"><span class="n">${L.n}</span>
+            <span class="val ${cl}">${val}</span><span class="ind">${ind}</span></div>`;
+  }).join("");
+
+  // Le bouton ne s'active que si les maillons indispensables sont verts.
+  pret = !!d && d.n_paires > 0 && d.connexion?.mode !== "REEL";
+  document.getElementById("lancer").disabled = !pret;
+}
+
+async function sonder(){
+  const url = document.getElementById("url").value.trim() || "kairos-live.json";
+  const msg = document.getElementById("msg");
+  try{
+    const r = await fetch(url + (url.includes("?")?"&":"?") + "t=" + Date.now(), {cache:"no-store"});
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    msg.classList.add("cache");
+    peindreDiag(d, url);
+    return d;
+  } catch(ex){
+    peindreDiag(null, url);
+    msg.innerHTML = `<b>${ex.message}</b> — le pont n'est pas joignable.<br>
+      Lance-le : <code>python bridge/live_bridge.py --source ibkr --port 7497 --notionnel 1000</code><br>
+      Ou lance tout d'un coup : <code>python app.py --source ibkr --port 7497</code>`;
+    msg.classList.remove("cache");
+    return null;
+  }
+}
+
+/* ==================== onglets / fenetres ==================== */
+document.getElementById("onglets").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if (!b || !enMarche) return;
+  vue = b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.className = x===b ? "actif" : "");
+  document.getElementById("v-arb").classList.toggle("cache", vue!=="arb");
+  document.getElementById("v-cours").classList.toggle("cache", vue!=="cours");
+  document.querySelectorAll(".ch-arb").forEach(x=>x.classList.toggle("cache", vue!=="arb"));
+  document.querySelectorAll(".ch-cours").forEach(x=>x.classList.toggle("cache", vue!=="cours"));
+  rendre();
+});
+const zb = document.getElementById("fenetres");
+zb.innerHTML = FENETRES.map((f,i)=>`<button data-i="${i}" class="${i===fenetre?"actif":""}">${f.lab}</button>`).join("");
+zb.addEventListener("click", e=>{
+  const b = e.target.closest("button"); if (!b) return;
+  fenetre = +b.dataset.i;
+  [...zb.children].forEach((x,i)=>x.className = i===fenetre ? "actif" : "");
+  rendre();
+});
+
+/* ==================== rendu ==================== */
+function rendre(){ if (vue === "arb") rendreArb(); else rendreCours(); }
+
+function bandeau(){
+  const n = A.ordres.length;
+  const p = document.getElementById("pnl");
+  p.textContent = n ? sg2(A.total)+" €" : "—";
+  p.className = "pnl " + (A.total>=0?"hausse":"baisse");
+  const r = document.getElementById("rdt");
+  r.textContent = n ? (A.total/A.capital*100).toFixed(3)+" %" : "—";
+  r.className = "v " + (A.total>=0?"hausse":"baisse");
+  document.getElementById("taux").textContent = A.vus ? (n/A.vus*100).toFixed(3)+" %" : "—";
+  document.getElementById("nb").textContent = f0(n);
+  document.getElementById("vus").textContent = f0(A.vus);
+  document.getElementById("frais").textContent = n ? f2(A.frais)+" €" : "—";
+  document.getElementById("n_paires").textContent = hist.size;
+}
+
+function rendreArb(){
+  bandeau();
+  const c = document.getElementById("lignes");
+  if (!A.ordres.length){
+    c.innerHTML = `<tr><td colspan="20" class="vide">AUCUNE OPPORTUNITÉ NETTE
+      &nbsp;·&nbsp; ${f0(A.vus)} boucles examinées</td></tr>`;
+    return;
+  }
+  c.innerHTML = A.ordres.slice().reverse().map(o=>{
+    const ch = o.parcours.map((d,i)=>(i?'<span class="fl">›</span>':"")+`<span>${d}</span>`).join("");
+    return `<tr>
+      <td class="gris">${hms(o.t)}</td><td class="faible">${o.id}</td>
+      <td><div class="parcours">${ch}</div></td>
+      <td class="d"><span class="badge">${o.parcours.length-1}</span></td>
+      <td>${o.parcours[0]}</td><td class="d">${f0(o.notionnel)}</td>
+      <td class="d faible">${o.produit.toFixed(10)}</td>
+      <td class="d">${sg(o.brut_bps)}</td>
+      <td class="d gris">${o.spread_bps.toFixed(3)}</td>
+      <td class="d gris">${o.comm_bps.toFixed(3)}</td>
+      <td class="d gris">${f2(o.comm_eur)}</td>
+      <td class="d">${o.cout_bps.toFixed(3)}</td>
+      <td class="d gris">${f2(o.cout_eur)}</td>
+      <td class="d ${o.net_bps>=0?"hausse":"baisse"}">${sg(o.net_bps)}</td>
+      <td class="d fort ${o.net_eur>=0?"hausse":"baisse"}">${sg2(o.net_eur)}</td>
+      <td class="d ${o.cumul>=0?"hausse":"baisse"}">${sg2(o.cumul)}</td>
+      <td class="d faible">${o.fraicheur_ms} ms</td>
+      <td class="d faible">${o.latence_us ? Math.round(o.latence_us)+" µs" : "—"}</td>
+      <td class="gris">${o.statut}</td><td class="faible">${o.source}</td></tr>`;
+  }).join("");
+}
+
+function courbe(pts){
+  const L=260,H=72,m=4;
+  if (pts.length<2) return `<text x="${L/2}" y="${H/2+3}" text-anchor="middle" class="svide">—</text>`;
+  const v = pts.map(p=>p.mid);
+  let lo=Math.min(...v), hi=Math.max(...v);
+  if (hi===lo){ const e=Math.abs(hi)*1e-5||1; hi+=e; lo-=e; }
+  const X=i=>m+i*(L-2*m)/(v.length-1), Y=x=>H-m-(x-lo)/(hi-lo)*(H-2*m);
+  const d = v.map((x,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(x).toFixed(1)).join(" ");
+  return `<line class="base" x1="0" y1="${Y(v[0]).toFixed(1)}" x2="${L}" y2="${Y(v[0]).toFixed(1)}"/>
+          <path class="courbe" d="${d}"/>`;
+}
+
+function rendreCours(){
+  bandeau();
+  const g = document.getElementById("grille");
+  const dispo = PAIRES.filter(s=>hist.has(s));
+  if (!dispo.length){ g.innerHTML = `<div class="attente">EN ATTENTE DES COTATIONS</div>`; return; }
+  const n = FENETRES[fenetre].pts;
+  g.innerHTML = dispo.map(sym=>{
+    const s = hist.get(sym).slice(-n);
+    const der=s[s.length-1], prem=s[0], d=dec(sym);
+    const vp = prem.mid ? (der.mid/prem.mid-1)*100 : 0, up = vp>=0;
+    const spr = der.mid ? (der.ask-der.bid)/der.mid*10000 : 0;
+    const mids = s.map(p=>p.mid);
+    return `<div class="cellule">
+      <div class="tete"><span class="sym">${sym}</span>
+        <span class="var ${up?"hausse":"baisse"}">${up?"+":"−"}${Math.abs(vp).toFixed(3)}%</span></div>
+      <div class="prix">${nbd(der.mid,d)}</div>
+      <div class="detail"><span>B ${nbd(der.bid,d)}</span><span>A ${nbd(der.ask,d)}</span>
+        <span>SPR ${spr.toFixed(2)}</span><span>H ${nbd(Math.max(...mids),d)}</span>
+        <span>L ${nbd(Math.min(...mids),d)}</span></div>
+      <svg viewBox="0 0 260 72" preserveAspectRatio="none">${courbe(s)}</svg></div>`;
+  }).join("");
+}
+
+/* ==================== ingestion ==================== */
+function pousser(q){
+  const sym = q.base+"/"+q.quote;
+  if (!hist.has(sym)) hist.set(sym, []);
+  const s = hist.get(sym), mid=(q.bid+q.ask)/2, der=s[s.length-1];
+  if (der && der.mid===mid && q.ts-der.t<900) return;
+  s.push({t:q.ts, mid, bid:q.bid, ask:q.ask});
+  if (s.length>MAX_POINTS) s.shift();
+}
+function enregistrer(o){
+  A.total += o.net_eur; A.frais += o.cout_eur; o.cumul = A.total; A.ordres.push(o);
+}
+
+async function lire(){
+  const url = document.getElementById("url").value.trim() || "kairos-live.json";
+  const r = await fetch(url + (url.includes("?")?"&":"?") + "t=" + Date.now(), {cache:"no-store"});
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const d = await r.json();
+  document.getElementById("pastille").className = "pastille on";
+  document.getElementById("etat").textContent = (d.connexion?.mode || d.source || "—").toUpperCase();
+  document.getElementById("fr").textContent = (d.fraicheur_ms ?? 0) + " ms";
+  if (typeof d.notionnel === "number") A.capital = d.notionnel;
+  (d.quotes || []).forEach(pousser);
+  (d.opportunites || []).forEach((a,i)=>{
+    const id = ((d.genere||"")+"-"+i).slice(-14);
+    if (A.ordres.some(x=>x.id===id)) return;
+    const N = d.notionnel || A.capital;
+    enregistrer({ id, t:Date.now(), parcours:a.parcours, notionnel:N,
+      produit: 1 + a.brut_bps/10000, brut_bps:a.brut_bps, spread_bps:a.spread_bps ?? 0,
+      comm_bps:a.cout_bps, comm_eur:a.cout_bps/10000*N,
+      cout_bps:a.cout_bps, cout_eur:a.cout_bps/10000*N,
+      net_bps:a.net_bps, net_eur:a.net_eur,
+      fraicheur_ms:d.fraicheur_ms ?? 0, latence_us:d.latence_p50_us ?? 0,
+      statut:"DÉTECTÉ", source:(d.connexion?.mode || d.source || "—").toUpperCase() });
+  });
+  if (typeof d.boucles_examinees === "number") A.vus = d.boucles_examinees;
+  rendre();
+}
+
+/* ==================== marche / arret ==================== */
+function demarrer(){
+  if (!pret) return;
+  clearInterval(sonde); sonde = null;
+  enMarche = true;
+  document.getElementById("depart").classList.add("cache");
+  document.getElementById("v-arb").classList.toggle("cache", vue!=="arb");
+  document.getElementById("v-cours").classList.toggle("cache", vue!=="cours");
+  document.getElementById("arret").classList.remove("cache");
+  lire().catch(()=>{});
+  timer = setInterval(()=>lire().catch(()=>{
+    document.getElementById("pastille").className = "pastille ko";
+    document.getElementById("etat").textContent = "perdu";
+  }), 1000);
+}
+function arreter(){
+  clearInterval(timer); timer = null; enMarche = false;
+  document.getElementById("depart").classList.remove("cache");
+  document.getElementById("v-arb").classList.add("cache");
+  document.getElementById("v-cours").classList.add("cache");
+  document.getElementById("arret").classList.add("cache");
+  document.getElementById("pastille").className = "pastille";
+  document.getElementById("etat").textContent = "arrêté";
+  sonder(); sonde = setInterval(sonder, 2000);
+}
+document.getElementById("lancer").addEventListener("click", demarrer);
+document.getElementById("arret").addEventListener("click", arreter);
+document.getElementById("tester").addEventListener("click", sonder);
+document.getElementById("url").addEventListener("keydown", e=>{ if (e.key==="Enter") sonder(); });
+
+/* ==================== export CSV ==================== */
+const COLS = ["heure_utc","id","parcours","jambes","depart","notionnel","produit_taux",
+  "brut_bps","spread_bps","commission_bps","commission_eur","cout_bps","cout_eur",
+  "net_bps","gain_eur","cumul_eur","fraicheur_ms","latence_us","statut","source"];
+const esc = v => { const s=String(v); return /[";\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+
+document.getElementById("csv").addEventListener("click", ()=>{
+  if (!A.ordres.length){ alert("Aucune opération à exporter."); return; }
+  const l = [COLS.join(";")];
+  for (const o of A.ordres) l.push([
+    new Date(o.t).toISOString(), o.id, o.parcours.join(" > "), o.parcours.length-1,
+    o.parcours[0], o.notionnel.toFixed(2), o.produit.toFixed(12),
+    o.brut_bps.toFixed(6), o.spread_bps.toFixed(6), o.comm_bps.toFixed(6),
+    o.comm_eur.toFixed(4), o.cout_bps.toFixed(6), o.cout_eur.toFixed(4),
+    o.net_bps.toFixed(6), o.net_eur.toFixed(4), o.cumul.toFixed(4),
+    o.fraicheur_ms, Math.round(o.latence_us||0), o.statut, o.source].map(esc).join(";"));
+  // BOM UTF-8 : sans lui, Excel casse les accents de « DÉTECTÉ ».
+  const b = new Blob(["﻿"+l.join("\r\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(b);
+  a.download = "kairos_ordres_" + new Date().toISOString().slice(0,19).replace(/[:T]/g,"-") + ".csv";
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+/* Le diagnostic tourne en boucle des l'ouverture : l'ecran se met a jour tout
+   seul quand le pont demarre, sans avoir a recharger la page. */
+sonder();
+sonde = setInterval(sonder, 2000);
+</script>
+</body>
+</html>

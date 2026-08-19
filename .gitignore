@@ -1,0 +1,33 @@
+# ---- Secrets. Rien de ce qui suit ne doit jamais partir sur GitHub.
+.env
+.env.*
+!.env.example
+
+# ---- Environnement Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# ---- Données de marché et journaux
+data/
+journal/
+*.parquet
+*.csv
+*.log
+dashboard/kairos-live.json
+
+# ---- Compilation C++
+kairos-cpp/bin/
+kairos-cpp/build/
+*.o
+*.a
+
+# ---- Empaquetage
+build/
+dist/
+*.spec
+
+# ---- macOS
+.DS_Store
