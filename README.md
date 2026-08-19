@@ -1,6 +1,6 @@
 # Kairos
 
-Système de capture de dislocations de prix. Phase 1 : collecte et mesure. fia
+Système de capture de dislocations de prix. Phase 1 : collecte et mesure. 
 
 ## Démarrage sans compte broker
 
