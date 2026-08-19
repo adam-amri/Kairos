@@ -63,6 +63,15 @@ class Etat:
         self.quotes: dict[str, dict] = {}
         self.n_maj = 0
         self.demarre = time.time()
+        # Compteurs CUMULATIFS depuis le demarrage.
+        # `boucles_examinees` renvoyait le nombre de boucles du balayage EN COURS
+        # — une constante, 14. L'interface affichait donc un compteur fige, et le
+        # taux de retenue se calculait sur un denominateur de 14 au lieu du
+        # travail reellement accompli. Le taux etait faux de plusieurs ordres de
+        # grandeur.
+        self.balayages = 0
+        self.boucles_cumul = 0
+        self.opportunites_cumul = 0
         # Diagnostic expose a l'interface : elle affiche l'etat de chaque
         # maillon plutot que de dire « ca ne marche pas ».
         self.diag: dict = {
@@ -105,6 +114,14 @@ def construire_json(etat: Etat, cost: CostModel, notional: float,
                     basis=DeviationBasis.EXECUTABLE)
     nettes = [o for o in toutes if o.profitable]
 
+    with etat.lock:
+        etat.balayages += 1
+        etat.boucles_cumul += len(toutes)
+        etat.opportunites_cumul += len(nettes)
+        balayages = etat.balayages
+        boucles_cumul = etat.boucles_cumul
+        opportunites_cumul = etat.opportunites_cumul
+
     maintenant = int(time.time() * 1000)
     plus_vieille = min((q["ts_recu"] for q in quotes), default=maintenant)
 
@@ -119,7 +136,12 @@ def construire_json(etat: Etat, cost: CostModel, notional: float,
         "quotes": quotes,
         "n_paires": len(quotes),
         "fraicheur_ms": maintenant - plus_vieille,
-        "boucles_examinees": len(toutes),
+        # Cumul depuis le demarrage : c'est le travail reellement accompli.
+        "boucles_examinees": boucles_cumul,
+        # Nombre de boucles du graphe a un instant donne — une constante.
+        "boucles_par_balayage": len(toutes),
+        "balayages": balayages,
+        "opportunites_cumul": opportunites_cumul,
         "opportunites": [
             {
                 "parcours": o.path,
@@ -362,7 +384,8 @@ def main() -> None:
 
         if journal is not None:
             ts_ms = int(time.time() * 1000)
-            journal.observer(ts_ms, data["boucles_examinees"])
+            # Le journal recoit le DELTA, pas le cumul : lui aussi additionne.
+            journal.observer(ts_ms, data["boucles_par_balayage"])
             for i, o in enumerate(data["opportunites"]):
                 journal.enregistrer(OrderRecord(
                     id=f"{ts_ms}-{i}", ts_ms=ts_ms,
@@ -376,8 +399,8 @@ def main() -> None:
 
         if time.time() - dernier_log > 30:
             print(f"[pont] {data['n_paires']} paires · fraicheur {data['fraicheur_ms']} ms "
-                  f"· {data['boucles_examinees']} boucles · "
-                  f"{len(data['opportunites'])} nette(s)", flush=True)
+                  f"· {data['balayages']:,} balayages · {data['boucles_examinees']:,} boucles "
+                  f"· {data['opportunites_cumul']} nette(s) au total", flush=True)
             dernier_log = time.time()
         time.sleep(args.intervalle)
 

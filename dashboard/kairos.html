@@ -120,6 +120,7 @@
   <span class="champ ch-arb"><span class="k">Rendement</span><span class="v" id="rdt">—</span></span>
   <span class="champ ch-arb"><span class="k">Retenues</span><span class="v" id="taux">—</span></span>
   <span class="champ ch-arb"><span class="k">Ordres</span><span class="v" id="nb">0</span></span>
+  <span class="champ ch-arb"><span class="k">Balayages</span><span class="v" id="bal">0</span></span>
   <span class="champ ch-arb"><span class="k">Boucles</span><span class="v" id="vus">0</span></span>
   <span class="champ ch-arb"><span class="k">Frais</span><span class="v" id="frais">—</span></span>
   <span class="champ ch-cours cache"><span class="k">Paires</span><span class="v" id="n_paires">0</span></span>
@@ -166,7 +167,7 @@
 
 let vue = "arb", timer = null, sonde = null, enMarche = false, pret = false;
 
-const A = { ordres:[], total:0, frais:0, vus:0, capital:1000 };
+const A = { ordres:[], total:0, frais:0, vus:0, balayages:0, capital:1000 };
 const PAIRES = ["EUR/USD","USD/JPY","GBP/USD","USD/CHF","AUD/USD","USD/CAD","NZD/USD","EUR/GBP",
                 "EUR/JPY","GBP/JPY","EUR/CHF","AUD/JPY","CHF/JPY","EUR/AUD","CAD/JPY","NZD/JPY"];
 const FENETRES = [{lab:"5M",pts:150},{lab:"15M",pts:450},{lab:"1H",pts:1800}];
@@ -214,7 +215,13 @@ const LIGNES = [
       const l = d?.latence_p50_us; if (!l) return ["—", null];
       return [`${Math.round(l)} µs`, l > 0 && l < 3e6];
   }},
-  {n:"Boucles surveillées",f:d => d ? [String(d.boucles_examinees), d.boucles_examinees > 0] : ["—", null]},
+  {n:"Boucles surveillées",f:d => {
+      if (!d) return ["—", null];
+      // Le nombre de cycles du graphe a un instant donne — une constante.
+      // A ne pas confondre avec le cumul affiche en marche.
+      const n = d.boucles_par_balayage ?? d.boucles_examinees ?? 0;
+      return [String(n), n > 0];
+  }},
   {n:"Notionnel",          f:d => d ? [f0(d.notionnel) + " $", true] : ["—", null]},
 ];
 
@@ -289,6 +296,7 @@ function bandeau(){
   document.getElementById("taux").textContent = A.vus ? (n/A.vus*100).toFixed(3)+" %" : "—";
   document.getElementById("nb").textContent = f0(n);
   document.getElementById("vus").textContent = f0(A.vus);
+  document.getElementById("bal").textContent = f0(A.balayages);
   document.getElementById("frais").textContent = n ? f2(A.frais)+" €" : "—";
   document.getElementById("n_paires").textContent = hist.size;
 }
@@ -298,6 +306,7 @@ function rendreArb(){
   const c = document.getElementById("lignes");
   if (!A.ordres.length){
     c.innerHTML = `<tr><td colspan="20" class="vide">AUCUNE OPPORTUNITÉ NETTE
+      &nbsp;·&nbsp; ${f0(A.balayages)} balayages
       &nbsp;·&nbsp; ${f0(A.vus)} boucles examinées</td></tr>`;
     return;
   }
@@ -394,7 +403,11 @@ async function lire(){
       fraicheur_ms:d.fraicheur_ms ?? 0, latence_us:d.latence_p50_us ?? 0,
       statut:"DÉTECTÉ", source:(d.connexion?.mode || d.source || "—").toUpperCase() });
   });
+  // Cumul depuis le demarrage du pont : c'est le travail reellement accompli.
+  // L'ancienne version lisait le compte du balayage en cours — un 14 immobile,
+  // qui faussait aussi le taux de retenue en divisant par 14 au lieu du total.
   if (typeof d.boucles_examinees === "number") A.vus = d.boucles_examinees;
+  if (typeof d.balayages === "number") A.balayages = d.balayages;
   rendre();
 }
 
