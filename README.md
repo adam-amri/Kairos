@@ -3,7 +3,7 @@
 Système de capture de dislocations de prix. Phase 1 : collecte et mesure. 
 
 ## Démarrage sans compte broker
-azda
+
 ```bash
 pip install -r requirements.txt
 python scripts/collect.py --venue synthetic --duration 60
