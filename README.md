@@ -4,7 +4,7 @@ Système de capture de dislocations de prix. Phase 1 : collecte et mesure.
 
 ## Démarrage sans compte broker
 
-```bashfanz
+```bash
 pip install -r requirements.txt
 python scripts/collect.py --venue synthetic --duration 60
 python scripts/analyze.py 'data/quotes_*'
