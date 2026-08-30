@@ -11,8 +11,7 @@ python scripts/analyze.py 'data/quotes_*'
 ```
 
 Le feed synthétique injecte un bruit d'amplitude **connue** dans la relation de
-non-arbitrage. L'analyseur doit le retrouver. S'il ne le retrouve pas, le bug est
-dans l'analyseur — et tu l'apprends sans avoir risqué un euro.
+non-arbitrage. L'analyseur doit le retrouver. 
 
 ## Avec IBKR
 
