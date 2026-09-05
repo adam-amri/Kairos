@@ -1,6 +1,6 @@
 # Kairos
 
-Système de capture de dislocations de prix. Phase 1 : collecte et mesure. 
+Système de capture de dislocations de prix. Phase 1 : collecte et mesure. jhfza
 
 ## Démarrage sans compte broker
 
