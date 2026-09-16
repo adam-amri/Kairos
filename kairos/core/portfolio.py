@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from kairos.core.orders import Fill
 
 
-@dataclass
+@dataclassff
 class Portfolio:
     cash: float = 0.0
     position: float = 0.0
