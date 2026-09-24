@@ -1,7 +1,7 @@
 # Kairos
 
 Système de capture de dislocations de prix. Phase 1 : collecte et mesure. 
-
+ fazadz
 ## Démarrage sans compte broker
 
 ```bash
