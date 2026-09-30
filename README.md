@@ -11,7 +11,7 @@ python scripts/analyze.py 'data/quotes_*'
 ```
 
 Le feed synthétique injecte un bruit d'amplitude **connue** dans la relation de
-non-arbitrage. L'analyseur doit le retrouver. 
+non-arbitrage. L'analyseur doit le retrouver.  azdad
 
 ## Avec IBKR
 
