@@ -9,7 +9,7 @@ pip install -r requirements.txt
 python scripts/collect.py --venue synthetic --duration 60
 python scripts/analyze.py 'data/quotes_*'
 ```
-fazazda
+
 
 Le feed synthétique injecte un bruit d'amplitude **connue** dans la relation de
 non-arbitrage. L'analyseur doit le retrouver. 
