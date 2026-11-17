@@ -1,5 +1,5 @@
-# Kairos   dazdqsz
-dzadqazdza
+# Kairos   
+
 Système de capture de dislocations de prix. Phase 1 : collecte et mesure. 
  
 ## Démarrage sans compte broker
